@@ -1,15 +1,58 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateUserDto, LoginUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from './entities/user.entity';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UserService {
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private jwtService: JwtService,
+  ) {}
+
   create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+    return this.userModel.create(createUserDto);
+  }
+
+  getUserByUsername(username: string) {
+    return this.userModel.findOne({
+      username,
+    });
+  }
+
+  async login(loginUserDto: LoginUserDto) {
+    const user = await this.userModel.findOne({
+      username: loginUserDto.username,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const validate = this.comparePassword(loginUserDto.password, user.password);
+    if (!validate) {
+      throw new NotFoundException('Invalid password');
+    }
+
+    const JWTtoken = this.jwtService.sign({
+      username: user.username,
+      sub: user._id,
+    });
+
+    const payload = {
+      username: user.username,
+      sub: user._id,
+      JWTtoken,
+    };
+
+    return payload;
   }
 
   findAll() {
-    return `This action returns all user`;
+    return `You can't see all users`;
   }
 
   findOne(id: number) {
@@ -22,5 +65,15 @@ export class UserService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  // hash the password before saving it to the database.
+  async hashPassword(password: string) {
+    return await bcrypt.hash(password, 5);
+  }
+
+  // compare the password with the hashed password in the database.
+  async comparePassword(attempt: string, password: string) {
+    return await bcrypt.compare(attempt, password);
   }
 }
