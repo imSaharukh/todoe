@@ -19,6 +19,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('TODO')
     .addBearerAuth()
+    .setExternalDoc('Postman Collection', '/docs-json')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
