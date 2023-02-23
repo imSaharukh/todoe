@@ -14,6 +14,11 @@ export class UserService {
   ) {}
 
   create(createUserDto: CreateUserDto) {
+    const user = this.getUserByUsername(createUserDto.username);
+    if (user) {
+      throw new NotFoundException('User already exists');
+    }
+
     return this.userModel.create(createUserDto);
   }
 
