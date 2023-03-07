@@ -13,8 +13,8 @@ export class UserService {
     private jwtService: JwtService,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
-    const user = this.getUserByUsername(createUserDto.username);
+  async create(createUserDto: CreateUserDto) {
+    const user = await this.getUserByUsername(createUserDto.username);
     if (user) {
       throw new NotFoundException('User already exists');
     }
@@ -22,8 +22,8 @@ export class UserService {
     return this.userModel.create(createUserDto);
   }
 
-  getUserByUsername(username: string) {
-    return this.userModel.findOne({
+  async getUserByUsername(username: string) {
+    return await this.userModel.findOne({
       username,
     });
   }
